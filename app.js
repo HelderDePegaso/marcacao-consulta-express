@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const multer = require('multer');
 const path = require('path');
 const mysql = require('mysql2');
-const outrasRotas = require('./routes/outrasRotas');
+const outrasRotas = require('./routes');
 
 const app = express();
 
@@ -21,7 +21,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Configuração do Multer para upload de arquivos (se necessário)
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'public/uploads/');
+        cb(null, 'uploads/');
     },
     filename: function (req, file, cb) {
         cb(null, Date.now() + path.extname(file.originalname)); // Renomear o arquivo para evitar conflitos
@@ -31,7 +31,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 
-
+console.clear()
 // Rotas principais
 app.get('/', (req, res) => {
     res.render('home');
