@@ -5,6 +5,8 @@ const { ErrorROBJ } = require('../utils.js');
 const { logger } = require('sequelize/lib/utils/logger');
 const { Op } = require('sequelize');
 
+const { authenticateToken } = require('../jwt');
+
 async function pegarPacientes() {
     let resposta = null;
 
@@ -13,16 +15,17 @@ async function pegarPacientes() {
     console.log("pegarPacientes");
 
         await Paciente.findAll({
-            raw: true
+            raw: true, logger: true
         }).then((pacientes) => {
             console.log("pacientes");
-            console.log(pacientes);
+            //console.log(pacientes);
     
             resposta = pacientes
         })
     
         return resposta || new Error('Nenhum paciente encontrado');
     } catch (error) {
+        console.log(error)
         return new Error(error);
     }
     
@@ -92,9 +95,9 @@ async function pegarPaciente(dadosChecagem) {
         }
 
         return await Paciente.findAll({
-            attributes: ['nome', 'bi', 'data_nascimento', 'sexo', 'mae', 'pai', 'telefone', 'email', 'estado', 'uuid', 'created_at'],
+            attributes: ['nome', 'bi', 'data_nascimento', 'sexo', 'mae', 'pai', 'telefone', 'email', 'estado', 'uuid', 'createdAt'],
             where: where
-        })
+        }, {logger: true})
     } catch(error) {
         return error;
     }
@@ -109,6 +112,23 @@ async function removerPaciente(dadosChecagem) {
         throw new ErrorROBJ("Erro ao remover o paciente. Verifique a existência dele ou se o UUID foi informado corretamente. Caso sim, tente mais tarde.", error)
     }
 }
+
+async function atualizarPaciente(uuid, dadosParaAtualizar) {
+    try {
+        const paciente = await Paciente.findOne({ where: { uuid } });
+
+        if (!paciente) {
+            return res.status(404).json({ mensagem: 'Paciente não encontrado' });
+        }
+
+        return await paciente.update(dadosParaAtualizar);
+
+    } catch (error) {
+        console.error(error);
+        return { mensagem: 'Erro ao atualizar paciente', erro: error.message };
+    }
+}
+
 module.exports = function init(router) {
     console.log("Pacientes iniciados");
     // Exemplo de rota para listar pacientes
@@ -116,10 +136,12 @@ module.exports = function init(router) {
         res.send("Pacientes");
     });
 
-    router.get("/pacientes/todos", (req, res) => {
+    router.get("/pacientes/todos", authenticateToken, (req, res) => {
         console.log("Pegando a todos os pacientes");
+        console.log(req.headers["authorization"])
+        console.log(req.authorization)
         pegarPacientes().then((data) => {
-
+            //console.log(data)
             if(data.length == 0){
                 res.send("Nenhum paciente encontrado")
             } else {
@@ -169,16 +191,44 @@ module.exports = function init(router) {
         })
     })
 
-    router.delete("/pacientes/romever/:uuid", (req, res) => {
+    router.delete("/pacientes/remover/:uuid", (req, res) => {
         console.log("Removendo o paciente pelo UUID")
         console.log(req.params.uuid)
         
         removerPaciente({uuid: req.params.uuid}).then((paciente) => {
+            res.status(200)
             res.jsonp({mensagem: 'Paciente removido com sucesso', paciente: paciente})
         }).catch((error) => {
+            res.status(400)
             res.send(error.mensagem)
         })
     })
+
+    router.put('/pacientes/atualizar/:uuid', async (req, res) => {
+        const uuid = req.params.uuid;
+        const dadosAtualizados = req.body;
+
+        atualizarPaciente(uuid, dadosAtualizados).then((paciente) => {
+            res.status(200)
+            delete paciente.id
+            res.json({ mensagem: 'Paciente atualizado com sucesso', paciente: {
+                nome: paciente.nome, 
+                bi: paciente.bi,
+                data_nasciemento: paciente.data_nasciemento,
+                sexo: paciente.sexo,
+                mae: paciente.mae,
+                pai: paciente.pai,
+                telefone: paciente.telefone,
+                email: paciente.email,
+                estado: paciente.estado,
+                uuid: paciente.uuid,
+                createdAt: paciente.createdAt,
+                updatedAt: paciente.updatedAt
+            }});
+        }).catch((error)=> {
+            res.status(500).json(error)
+        })
+    });
 
 
 

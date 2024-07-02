@@ -5,6 +5,12 @@ const path = require('path');
 const mysql = require('mysql2');
 const outrasRotas = require('./routes');
 
+const { jwt, secret } = require('./jwt');
+
+
+
+const getUsuario = require('./usuarioAutenticado/getUsuario');
+
 const app = express();
 
 // Configuração do EJS
@@ -44,10 +50,23 @@ outrasRotas(app);
 // Middleware de logging para depuração
 app.use((req, res, next) => {
     console.log('Body:', req.body);
+    console.log('URL: ', req.url)
+    console.log('Method: ', req.method)
+    console.log('Params: ', req.params)
     next();
 });
 
-// Sua rota /pacientes/criar e outras configurações do app aqui
+app.post('/login', (req, res) => {
+    
+    const user = getUsuario(req.body.usuario, req.body.password);
+
+    
+    // Gera um token JWT
+    const token = jwt.sign(user, secret, { expiresIn: '1h' });
+
+    // Envia o token ao cliente
+    res.json({ token });
+});
 
 
 // Configuração do servidor
