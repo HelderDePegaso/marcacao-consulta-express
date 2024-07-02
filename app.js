@@ -41,6 +41,15 @@ app.get('/', (req, res) => {
 // Outras rotas da aplicação
 outrasRotas(app);
 
+// Middleware de logging para depuração
+app.use((req, res, next) => {
+    console.log('Body:', req.body);
+    next();
+});
+
+// Sua rota /pacientes/criar e outras configurações do app aqui
+
+
 // Configuração do servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

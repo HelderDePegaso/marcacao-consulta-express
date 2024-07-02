@@ -34,6 +34,15 @@ module.exports = function(sequelize, DataTypes) {
     razao: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    estado: {
+      type: DataTypes.ENUM('Realizada','Cancelada','Pendente'),
+      allowNull: false,
+      defaultValue: "Pendente"
+    },
+    uuid: {
+      type: DataTypes.STRING(40),
+      allowNull: false
     }
   }, {
     sequelize,

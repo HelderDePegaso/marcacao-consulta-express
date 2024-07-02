@@ -26,6 +26,10 @@ module.exports = function(sequelize, DataTypes) {
     email: {
       type: DataTypes.STRING(100),
       allowNull: true
+    },
+    uuid: {
+      type: DataTypes.STRING(40),
+      allowNull: false
     }
   }, {
     sequelize,

@@ -11,6 +11,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(50),
       allowNull: false
     },
+    bi: {
+      type: DataTypes.STRING(15),
+      allowNull: false
+    },
     data_nascimento: {
       type: DataTypes.DATEONLY,
       allowNull: false
@@ -36,13 +40,18 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true
     },
     estado: {
-      type: DataTypes.ENUM('ACTIVO','BLOQUEIADO','DESCARTADO'),
-      allowNull: true
+      type: DataTypes.ENUM('Activo','Bloqueado','Descartado'),
+      allowNull: true,
+      defaultValue: "Activo"
+    },
+    uuid: {
+      type: DataTypes.STRING(40),
+      allowNull: false
     }
   }, {
     sequelize,
     tableName: 'paciente',
-    timestamps: false,
+    timestamps: true,
     indexes: [
       {
         name: "PRIMARY",
