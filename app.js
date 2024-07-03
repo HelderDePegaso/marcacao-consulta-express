@@ -7,6 +7,8 @@ const outrasRotas = require('./routes');
 
 const { jwt, secret } = require('./jwt');
 
+const session = require("express-session")
+
 
 
 const getUsuario = require('./usuarioAutenticado/getUsuario');
@@ -23,6 +25,12 @@ app.use(bodyParser.json());
 
 // Middleware para arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(session({
+        secret: 'ajsfkef-wjieifie',
+        resave: true,
+        saveUninitialized: true
+}));
 
 // Configuração do Multer para upload de arquivos (se necessário)
 const storage = multer.diskStorage({
@@ -60,14 +68,24 @@ app.post('/login', (req, res) => {
     
     const user = getUsuario(req.body.usuario, req.body.password);
 
+    if (!user) {
+        return res.status(401).json({ message: 'Credenciais inválidas' });
+    }
     
     // Gera um token JWT
     const token = jwt.sign(user, secret, { expiresIn: '1h' });
+    user.token = token;
 
+    req.session.user = user;
     // Envia o token ao cliente
-    res.json({ token });
+    res.send("Login efetuado com sucesso");
 });
 
+
+// Testando Login
+app.get('/session', (req, res) => {
+    res.send(`${JSON.stringify(req.session.user)}`);
+});
 
 // Configuração do servidor
 const PORT = process.env.PORT || 3000;

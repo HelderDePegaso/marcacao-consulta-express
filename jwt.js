@@ -16,9 +16,18 @@ function authenticateToken(req, res, next) {
     });
 }
 
+function verificarSessao(req, res, next) {
+    if(!req.session.user) {
+        return res.sendStatus(401);
+    }
+
+    next();
+}
+
 module.exports = {
     jwt: jwt,
     secret: secret,
-    authenticateToken: authenticateToken
+    authenticateToken: authenticateToken,
+    verificarSessao: verificarSessao
 }
 

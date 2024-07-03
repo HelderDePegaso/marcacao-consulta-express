@@ -5,7 +5,7 @@ const { ErrorROBJ } = require('../utils.js');
 const { logger } = require('sequelize/lib/utils/logger');
 const { Op } = require('sequelize');
 
-const { authenticateToken } = require('../jwt');
+const { authenticateToken, verificarSessao } = require('../jwt');
 
 async function pegarPacientes() {
     let resposta = null;
@@ -136,7 +136,7 @@ module.exports = function init(router) {
         res.send("Pacientes");
     });
 
-    router.get("/pacientes/todos", authenticateToken, (req, res) => {
+    router.get("/pacientes/todos", verificarSessao, (req, res) => {
         console.log("Pegando a todos os pacientes");
         console.log(req.headers["authorization"])
         console.log(req.authorization)
@@ -155,7 +155,7 @@ module.exports = function init(router) {
         
     })
 
-    router.post("/pacientes/criar", (req, res) => {
+    router.post("/pacientes/criar", verificarSessao, (req, res) => {
         console.log("Recebi algo")
         console.log(req.body)
 
@@ -170,7 +170,7 @@ module.exports = function init(router) {
         })
     })
 
-    router.get("/pacientes/registro/:uuid", (req, res) => {
+    router.get("/pacientes/registro/:uuid", verificarSessao, (req, res) => {
         console.log("Pegando o paciente pelo UUID")
         console.log(req.params.uuid)
     
@@ -181,7 +181,7 @@ module.exports = function init(router) {
         })
     })
 
-    router.get("/pacientes/registro", (req, res) => {
+    router.get("/pacientes/registro", verificarSessao, (req, res) => {
         console.log("Pegando o paciente por algum campo específico. Isso pode retornar mais de um resultado, mas só um deles será mostrado.")
         console.log(req.body)
         pegarPaciente(req.body).then((paciente) => {
@@ -191,7 +191,7 @@ module.exports = function init(router) {
         })
     })
 
-    router.delete("/pacientes/remover/:uuid", (req, res) => {
+    router.delete("/pacientes/remover/:uuid", verificarSessao, (req, res) => {
         console.log("Removendo o paciente pelo UUID")
         console.log(req.params.uuid)
         
@@ -204,7 +204,7 @@ module.exports = function init(router) {
         })
     })
 
-    router.put('/pacientes/atualizar/:uuid', async (req, res) => {
+    router.put('/pacientes/atualizar/:uuid', verificarSessao, async (req, res) => {
         const uuid = req.params.uuid;
         const dadosAtualizados = req.body;
 
