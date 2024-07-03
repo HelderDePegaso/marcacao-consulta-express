@@ -1,4 +1,4 @@
-const { Medico: Doutor } = require('../models/modelexportation');
+const { Medico: Doutor , Especialidade } = require('../models/modelexportation');
 const { v4: uuidv4 } = require('uuid');
 const { ErrorROBJ } = require('../utils.js');
 const { authenticateToken, verificarSessao } = require('../jwt');
@@ -26,20 +26,30 @@ async function criarNovoDoutor(body) {
     if (camposFalta.length > 0) {
         throw new ErrorROBJ('Campos obrigatórios ausentes', { camposFalta });
     } else {
-        let especialidade_id = null;
-        await verificarEspecialidade(body.especialidade).then(especialidade => {
-            especialidade_id = especialidade.id;
-        });
-        const novoDoutor = {
-            nome: body.nome,
-            especialidade: especialidade_id,
-            telefone: body.telefone,
-            email: body.email || null,
-            uuid: uuidv4()
-        };
 
-        await Doutor.create(novoDoutor);
-        return { message: 'Doutor adicionado com sucesso', doutor: novoDoutor };
+        const doutor = await verificarEspecialidade(body.especialidade).then(especialidade => {
+            console.log("Que especialidade recebi?")
+            console.log("Foi esta especialidade")
+            console.log(especialidade[0].id)
+            if(especialidade.length === 0) return new ErrorROBJ('Especialidade inexistente', { especialidade: body.especialidade });
+            const novoDoutor = {
+                nome: body.nome,
+                especialidade: body.especialidade,
+                especialidade_id: especialidade[0].id,
+                telefone: body.telefone,
+                email: body.email || null,
+                uuid: uuidv4()
+            }
+
+            return Doutor.create(novoDoutor);
+        }).catch(error => {
+            return new ErrorROBJ("Erro ao criar novo doutor", error);
+        });
+
+        //console.log(doutor)
+
+        return doutor;
+        
     }
 }
 
@@ -51,11 +61,11 @@ async function pegarDoutor(dadosChecagem) {
         });
 
         if (Object.keys(where).length == 0) {
-            throw new ErrorROBJ('Nenhum dado para pesquisar');
+            throw new ErrorROBJ('Nenhum dado para pesquisar', {});
         }
 
         return await Doutor.findAll({
-            attributes: ['nome', 'especialidade', 'telefone', 'email', 'estado', 'uuid', 'createdAt'],
+            attributes: ['nome', 'especialidade_id', 'telefone', 'email', 'uuid'],
             where: where
         });
     } catch (error) {
@@ -87,12 +97,15 @@ async function atualizarDoutor(uuid, dadosParaAtualizar) {
 
 
 async function verificarEspecialidade(especialidade) {
+    console.log("Verificando Especialidades")
+    console.log(especialidade)
     return await Especialidade.findAll({
         attributes: ['id'],
-        where: { nome: especialidade,
-            [Op.or]: { abre: especialidade } 
-        }, 
-        raw: true
+        where: { 
+            [Op.or]: { abre: especialidade, nome: especialidade } 
+        }
+    }, {
+        raw: true, logger: true
     });
 }
 
@@ -101,14 +114,16 @@ module.exports = function init(router) {
         pegarDoutores().then(data => {
             res.json(data.length ? data : "Nenhum doutor encontrado");
         }).catch(error => {
-            res.send("Algum erro ocorreu ao carregar os doutores. Por favor, tente mais tarde.");
+            res.status(400).send("Algum erro ocorreu ao carregar os doutores. Por favor, tente mais tarde.");
         });
     });
 
     router.post('/doutores/criar', verificarSessao, (req, res) => {
         console.log("Criando novo doutor");
+        console.log(req.body)
         criarNovoDoutor(req.body).then(resposta => {
-            res.status(201).jsonp(resposta);
+            if(resposta instanceof ErrorROBJ) return res.status(400).jsonp({ message: resposta.message, data: {} });
+            res.status(201).jsonp({ mensagem: 'Doutor criado com sucesso', doutor: resposta });
         }).catch(error => {
             res.status(400).jsonp({ message: error.message, data: error.data });
         });
@@ -116,9 +131,9 @@ module.exports = function init(router) {
 
     router.get('/doutores/registro/:uuid', verificarSessao, (req, res) => {
         pegarDoutor({ uuid: req.params.uuid }).then(doutor => {
-            res.jsonp({ mensagem: 'Doutor encontrado', doutor });
+            res.status(200).jsonp({ mensagem: 'Doutor encontrado', doutor });
         }).catch(error => {
-            res.send(error);
+            res.status(400).send(error);
         });
     });
 

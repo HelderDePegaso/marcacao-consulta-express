@@ -49,6 +49,7 @@ async function criarNovoPaciente(body) {
         // Adicionar apenas os campos disponíveis
         const novoPaciente = {
             nome: body.nome,
+            bi: body.bi,
             data_nascimento: body.data_nascimento,
             sexo: body.sexo,
             mae: body.mae,
@@ -60,7 +61,7 @@ async function criarNovoPaciente(body) {
         };
 
         // Adicionar o novo paciente
-        await Paciente.create(novoPaciente).catch((error) => {
+        await Paciente.create(novoPaciente , { logger: true }).catch((error) => {
             throw new ErrorROBJ('Erro ao adicionar o novo paciente', { mensagemErro: 'Erro ao adicionar o novo paciente', novoPaciente: novoPaciente });
         });
 
@@ -208,6 +209,9 @@ module.exports = function init(router) {
         const uuid = req.params.uuid;
         const dadosAtualizados = req.body;
 
+        console.log("Atualizando o paciente")
+        console.log(uuid)
+        console.log(dadosAtualizados)
         atualizarPaciente(uuid, dadosAtualizados).then((paciente) => {
             res.status(200)
             delete paciente.id
